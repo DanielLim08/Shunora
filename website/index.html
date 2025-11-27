@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shunora - Your Study Companion</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Google Calendar API -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-spinner">
+                <svg class="timer-icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="10" y1="2" x2="14" y2="2"></line>
+                    <line x1="12" y1="14" x2="15" y2="11"></line>
+                    <circle cx="12" cy="14" r="8"></circle>
+                </svg>
+            </div>
+            <p class="loading-text">Loading your workspace...</p>
+        </div>
+    </div>
+
+    <!-- Auth Form -->
+    <div id="auth-container" class="auth-container" style="display: none;">
+        <div class="floating-particles"></div>
+        <div class="auth-card glass">
+            <div class="auth-header">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="logo-title">Shunora</h1>
+                        <p class="logo-subtitle">Your Study Companion</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="auth-tabs">
+                <button id="signin-tab" class="auth-tab active">Sign In</button>
+                <button id="signup-tab" class="auth-tab">Sign Up</button>
+            </div>
+
+            <form id="auth-form" class="auth-form">
+                <div id="name-field" class="form-field" style="display: none;">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" placeholder="Enter your name" autocomplete="name">
+                </div>
+                
+                <div class="form-field">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Enter your email" required autocomplete="email">
+                </div>
+                
+                <div class="form-field">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="auth-button spring-bounce">
+                    <span id="auth-button-text">Sign In</span>
+                </button>
+                
+                <div id="auth-error" class="auth-error" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-container" class="app-container" style="display: none;">
+        <!-- Background Particles -->
+        <div class="background-particles"></div>
+
+        <!-- Header -->
+        <header class="header glass">
+            <div class="container header-content">
+                <div class="header-brand spring-bounce">
+                    <div class="brand-icon glow-lavender">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="brand-title">Shunora</h1>
+                        <p class="brand-subtitle">Your Study Companion</p>
+                    </div>
+                </div>
+                <button id="signout-btn" class="signout-button spring-bounce">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Sign Out
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container main-content">
+            <!-- Tab Navigation -->
+            <div class="tabs-container">
+                <div class="tabs-list glass">
+                    <button class="tab-trigger active spring-bounce" data-tab="timer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="10" y1="2" x2="14" y2="2"></line>
+                            <line x1="12" y1="14" x2="15" y2="11"></line>
+                            <circle cx="12" cy="14" r="8"></circle>
+                        </svg>
+                        <span>Timer</span>
+                    </button>
+                    <button class="tab-trigger spring-bounce" data-tab="tasks">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m9 11 3 3L22 4"/>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                        <span>Tasks</span>
+                    </button>
+                    <button class="tab-trigger spring-bounce" data-tab="notes">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+                            <path d="M14 2v4a2 2 0 0 0 2 2h4"/>
+                        </svg>
+                        <span>Notes</span>
+                    </button>
+                    <button class="tab-trigger spring-bounce" data-tab="calendar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M8 2v4"/>
+                            <path d="M16 2v4"/>
+                            <rect width="18" height="18" x="3" y="4" rx="2"/>
+                            <path d="M3 10h18"/>
+                        </svg>
+                        <span>Calendar</span>
+                    </button>
+                    <button class="tab-trigger spring-bounce" data-tab="resources">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>
+                        </svg>
+                        <span>Resources</span>
+                    </button>
+                    <button class="tab-trigger spring-bounce" data-tab="dashboard">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="7" height="9" x="3" y="3" rx="1"/>
+                            <rect width="7" height="5" x="14" y="3" rx="1"/>
+                            <rect width="7" height="9" x="14" y="12" rx="1"/>
+                            <rect width="7" height="5" x="3" y="16" rx="1"/>
+                        </svg>
+                        <span>Stats</span>
+                    </button>
+                    <button class="tab-trigger spring-bounce" data-tab="leaderboard">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                            <path d="M4 22h16"/>
+                            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                        </svg>
+                        <span>Community</span>
+                    </button>
+                    <button class="tab-trigger spring-bounce" data-tab="music">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 18V5l12-2v13"/>
+                            <circle cx="6" cy="18" r="3"/>
+                            <circle cx="18" cy="16" r="3"/>
+                        </svg>
+                        <span>Music</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content-container">
+                <!-- Timer Tab -->
+                <div id="timer-tab" class="tab-content active">
+                    <div class="timer-container">
+                        <div class="timer-card glass">
+                            <div class="timer-particles"></div>
+                            <div class="timer-header">
+                                <h2 id="timer-mode-label">Focus Time</h2>
+                                <button id="settings-btn" class="icon-button spring-bounce">
+                                    <svg id="settings-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <div class="timer-mode-buttons">
+                                <button class="mode-button active" data-mode="work">Work</button>
+                                <button class="mode-button" data-mode="shortBreak">Short Break</button>
+                                <button class="mode-button" data-mode="longBreak">Long Break</button>
+                            </div>
+                            
+                            <div class="timer-display-container">
+                                <div id="timer-display" class="timer-display">
+                                    <div class="timer-glow"></div>
+                                    <div id="timer-time" class="timer-time">25:00</div>
+                                    <div id="celebration" class="celebration"></div>
+                                </div>
+                                <div class="timer-progress-bar">
+                                    <div id="timer-progress" class="timer-progress-fill"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="timer-controls">
+                                <button id="timer-toggle" class="timer-control-btn primary spring-bounce">
+                                    <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polygon points="6 3 20 12 6 21 6 3"/>
+                                    </svg>
+                                    <span id="timer-toggle-text">Start</span>
+                                </button>
+                                <button id="timer-reset" class="timer-control-btn secondary spring-bounce">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                                        <path d="M21 3v5h-5"/>
+                                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                                        <path d="M8 16H3v5"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            <div class="session-count">
+                                Total study time: <span id="total-time" class="count-value">0h 0m</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks Tab -->
+                <div id="tasks-tab" class="tab-content">
+                    <div class="tasks-container">
+                        <div class="tasks-header">
+                            <h2>Task Manager</h2>
+                            <div class="task-filters">
+                                <button class="filter-btn active" data-filter="all">All</button>
+                                <button class="filter-btn" data-filter="active">Active</button>
+                                <button class="filter-btn" data-filter="completed">Completed</button>
+                            </div>
+                        </div>
+                        
+                        <div class="add-task-form glass">
+                            <input type="text" id="new-task-input" placeholder="Add a new task..." class="task-input">
+                            <select id="new-task-priority" class="task-priority-select">
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                            <button id="add-task-btn" class="add-task-btn spring-bounce">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14"/>
+                                    <path d="M12 5v14"/>
+                                </svg>
+                                Add
+                            </button>
+                        </div>
+                        
+                        <div id="tasks-list" class="tasks-list"></div>
+                    </div>
+                </div>
+
+                <!-- Notes Tab -->
+                <div id="notes-tab" class="tab-content">
+                    <div class="notes-container">
+                        <div class="notes-header">
+                            <h2>Note Taker</h2>
+                            <button id="add-note-btn" class="add-note-btn spring-bounce">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14"/>
+                                    <path d="M12 5v14"/>
+                                </svg>
+                                New Note
+                            </button>
+                        </div>
+                        
+                        <div id="notes-grid" class="notes-grid"></div>
+                    </div>
+                </div>
+
+                <!-- Calendar Tab -->
+                <div id="calendar-tab" class="tab-content">
+                    <div class="calendar-container glass">
+                        <div class="calendar-header">
+                            <button id="calendar-prev" class="calendar-nav-btn spring-bounce">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m15 18-6-6 6-6"/>
+                                </svg>
+                            </button>
+                            <h2 id="calendar-title">November 2025</h2>
+                            <button id="calendar-next" class="calendar-nav-btn spring-bounce">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="m9 18 6-6-6-6"/>
+                                </svg>
+                            </button>
+                        </div>
+                        
+                        <!-- Google Calendar Integration Controls -->
+                        <div class="calendar-controls" style="margin-bottom: 1.5rem; display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+                            <button id="google-calendar-connect" class="calendar-connect-btn spring-bounce">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/>
+                                    <path d="M3 10h18"/>
+                                </svg>
+                                Connect Google Calendar
+                            </button>
+                            <button id="google-calendar-disconnect" class="calendar-disconnect-btn spring-bounce" style="display: none;">
+                                Disconnect
+                            </button>
+                            <button id="add-calendar-event" class="calendar-add-btn spring-bounce" style="display: none;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M5 12h14"/><path d="M12 5v14"/>
+                                </svg>
+                                Add Event
+                            </button>
+                        </div>
+                        
+                        <div id="calendar-grid" class="calendar-grid"></div>
+                        
+                        <!-- Events List for Selected Day -->
+                        <div id="calendar-events-panel" class="calendar-events-panel" style="display: none;">
+                            <div class="calendar-events-header">
+                                <h3 id="selected-date-title">Events</h3>
+                                <button id="close-events-panel" class="close-modal">×</button>
+                            </div>
+                            <div id="calendar-events-list" class="calendar-events-list"></div>
+                        </div>
+                        
+                        <div class="calendar-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot study-session"></span>
+                                Study Sessions
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot task-due"></span>
+                                Tasks Due
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot google-event"></span>
+                                Google Events
+                            </div>
+                        </div>
+                        
+                        <style>
+                            .calendar-connect-btn, .calendar-disconnect-btn, .calendar-add-btn {
+                                padding: 0.75rem 1.5rem;
+                                background: var(--gradient-lavender);
+                                color: white;
+                                border-radius: var(--radius-sm);
+                                display: flex;
+                                align-items: center;
+                                gap: 0.5rem;
+                                transition: all 0.3s;
+                                border: none;
+                                cursor: pointer;
+                                font-family: var(--font-family);
+                            }
+                            
+                            .calendar-connect-btn:hover, .calendar-disconnect-btn:hover, .calendar-add-btn:hover {
+                                transform: translateY(-2px);
+                                box-shadow: var(--shadow-lg);
+                            }
+                            
+                            .calendar-disconnect-btn {
+                                background: var(--coral-red);
+                            }
+                            
+                            .calendar-add-btn {
+                                background: var(--gradient-mint);
+                            }
+                            
+                            .legend-dot.google-event {
+                                background: #4285f4;
+                            }
+                            
+                            .calendar-day-dots {
+                                display: flex;
+                                gap: 2px;
+                                margin-top: 4px;
+                                justify-content: center;
+                            }
+                            
+                            .calendar-events-panel {
+                                margin-top: 2rem;
+                                padding: 1.5rem;
+                                background: white;
+                                border: 2px solid var(--glass-border);
+                                border-radius: var(--radius);
+                                animation: fadeIn 0.3s ease-out;
+                            }
+                            
+                            .calendar-events-header {
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                margin-bottom: 1rem;
+                            }
+                            
+                            .calendar-events-list {
+                                display: flex;
+                                flex-direction: column;
+                                gap: 0.75rem;
+                                max-height: 400px;
+                                overflow-y: auto;
+                            }
+                            
+                            .calendar-event-item {
+                                padding: 1rem;
+                                background: rgba(211, 150, 255, 0.05);
+                                border-left: 4px solid #4285f4;
+                                border-radius: var(--radius-sm);
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: start;
+                                gap: 1rem;
+                                transition: all 0.3s;
+                            }
+                            
+                            .calendar-event-item:hover {
+                                background: rgba(211, 150, 255, 0.1);
+                                transform: translateX(4px);
+                            }
+                            
+                            .calendar-event-content {
+                                flex: 1;
+                            }
+                            
+                            .calendar-event-title {
+                                font-weight: 600;
+                                margin-bottom: 0.25rem;
+                                color: var(--deep-black);
+                            }
+                            
+                            .calendar-event-time {
+                                font-size: 14px;
+                                color: var(--medium-gray);
+                                margin-bottom: 0.25rem;
+                            }
+                            
+                            .calendar-event-description {
+                                font-size: 14px;
+                                color: var(--medium-gray);
+                                margin-top: 0.5rem;
+                            }
+                            
+                            .calendar-event-delete {
+                                padding: 0.5rem;
+                                color: var(--coral-red);
+                                background: none;
+                                border: none;
+                                cursor: pointer;
+                                transition: all 0.3s;
+                            }
+                            
+                            .calendar-event-delete:hover {
+                                transform: scale(1.1);
+                            }
+                        </style>
+                    </div>
+                </div>
+
+                <!-- Resources Tab -->
+                <div id="resources-tab" class="tab-content">
+                    <div class="resources-container">
+                        <div class="resources-header">
+                            <h2>Resource Hub</h2>
+                            <button id="add-resource-btn" class="add-resource-btn spring-bounce">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14"/>
+                                    <path d="M12 5v14"/>
+                                </svg>
+                                Add Resource
+                            </button>
+                        </div>
+                        
+                        <div id="resources-list" class="resources-list"></div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Tab -->
+                <div id="dashboard-tab" class="tab-content">
+                    <div class="dashboard-container">
+                        <h2>Study Statistics</h2>
+                        <div class="stats-grid">
+                            <div class="stat-card glass">
+                                <div class="stat-icon lavender">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="10" y1="2" x2="14" y2="2"></line>
+                                        <line x1="12" y1="14" x2="15" y2="11"></line>
+                                        <circle cx="12" cy="14" r="8"></circle>
+                                    </svg>
+                                </div>
+                                <div class="stat-content">
+                                    <p class="stat-label">Total Sessions</p>
+                                    <p class="stat-value" id="total-sessions">0</p>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card glass">
+                                <div class="stat-icon mint">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 3v16a2 2 0 0 0 2 2h16"/>
+                                        <path d="m19 9-5 5-4-4-3 3"/>
+                                    </svg>
+                                </div>
+                                <div class="stat-content">
+                                    <p class="stat-label">Study Streak</p>
+                                    <p class="stat-value" id="study-streak">0 days</p>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card glass">
+                                <div class="stat-icon amber">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <polyline points="12 6 12 12 16 14"/>
+                                    </svg>
+                                </div>
+                                <div class="stat-content">
+                                    <p class="stat-label">Total Hours</p>
+                                    <p class="stat-value" id="total-hours">0h</p>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card glass">
+                                <div class="stat-icon coral">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                                        <path d="M4 22h16"/>
+                                        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                                        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                                    </svg>
+                                </div>
+                                <div class="stat-content">
+                                    <p class="stat-label">Achievements</p>
+                                    <p class="stat-value" id="achievements-count">3</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-container glass">
+                            <h3>Weekly Progress</h3>
+                            <canvas id="weekly-chart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Leaderboard Tab -->
+                <div id="leaderboard-tab" class="tab-content">
+                    <div class="leaderboard-container">
+                        <div class="leaderboard-header">
+                            <h2>Community Leaderboard</h2>
+                            <p class="leaderboard-subtitle">See how you stack up against other students!</p>
+                        </div>
+                        
+                        <div id="leaderboard-list" class="leaderboard-list"></div>
+                    </div>
+                </div>
+
+                <!-- Music Tab -->
+                <div id="music-tab" class="tab-content">
+                    <div class="music-container">
+                        <div class="music-card glass">
+                            <h2>Focus Music</h2>
+                            <p class="music-description">Enhance your concentration with curated study playlists</p>
+                            
+                            <div class="music-playlists">
+                                <div class="playlist-item spring-bounce" data-url="https://www.youtube.com/watch?v=jfKfPfyJRdk">
+                                    <div class="playlist-icon">🎵</div>
+                                    <div class="playlist-info">
+                                        <h4>Lo-fi Beats</h4>
+                                        <p>Relaxing beats for focus</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="playlist-item spring-bounce" data-url="https://www.youtube.com/watch?v=5qap5aO4i9A">
+                                    <div class="playlist-icon">🌧️</div>
+                                    <div class="playlist-info">
+                                        <h4>Rain Sounds</h4>
+                                        <p>Calming rain ambience</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="playlist-item spring-bounce" data-url="https://www.youtube.com/watch?v=2OEL4P1Rz04">
+                                    <div class="playlist-icon">🎹</div>
+                                    <div class="playlist-info">
+                                        <h4>Classical Study</h4>
+                                        <p>Peaceful classical music</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="playlist-item spring-bounce" data-url="https://www.youtube.com/watch?v=lTRiuFIWV54">
+                                    <div class="playlist-icon">🌊</div>
+                                    <div class="playlist-info">
+                                        <h4>Ocean Waves</h4>
+                                        <p>Soothing ocean sounds</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="music-note">
+                                💡 Tip: Click on any playlist to open it in a new tab
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Study Coach - Floating Assistant -->
+        <div id="study-coach" class="study-coach">
+            <div class="coach-card glass">
+                <div class="coach-header">
+                    <div class="coach-avatar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+                            <path d="M9 13a4.5 4.5 0 0 0 3-4"/>
+                            <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/>
+                            <path d="M3.477 10.896a4 4 0 0 1 .585-.396"/>
+                            <path d="M6 18a4 4 0 0 1-1.967-.516"/>
+                            <path d="M12 13h4"/>
+                            <path d="M12 18h6a2 2 0 0 1 2 2v1"/>
+                            <path d="M12 8h8"/>
+                            <path d="M16 8V5a2 2 0 0 1 2-2"/>
+                            <circle cx="16" cy="13" r=".5"/>
+                            <circle cx="18" cy="3" r=".5"/>
+                            <circle cx="20" cy="21" r=".5"/>
+                            <circle cx="20" cy="8" r=".5"/>
+                        </svg>
+                    </div>
+                    <button id="close-coach" class="close-coach">×</button>
+                </div>
+                <div class="coach-content">
+                    <h3>Study Coach</h3>
+                    <p id="coach-message" class="coach-message">You're doing amazing! Keep up the great work! 🌟</p>
+                </div>
+                <div class="coach-achievements">
+                    <h4>Your Achievements</h4>
+                    <div class="achievement-item">
+                        <div class="achievement-progress">
+                            <div class="achievement-bar" style="width: 60%"></div>
+                        </div>
+                        <p class="achievement-label">Early Bird - 60%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button id="show-coach" class="show-coach-btn glow-lavender" style="display: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+                <path d="M9 13a4.5 4.5 0 0 0 3-4"/>
+            </svg>
+        </button>
+
+        <!-- Footer -->
+        <footer class="footer glass">
+            <div class="container footer-content">
+                <p class="footer-text">
+                    Built with <span class="footer-heart">❤️</span> for productive minds
+                </p>
+                <p class="footer-copyright">
+                    Shunora © 2025 | Your journey to excellence starts here
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Settings Dialog -->
+    <div id="settings-dialog" class="modal" style="display: none;">
+        <div class="modal-overlay" id="settings-overlay"></div>
+        <div class="modal-content glass">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button id="close-settings" class="close-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label for="work-duration">Work Duration (minutes)</label>
+                    <input type="number" id="work-duration" value="25" min="1" max="60" class="setting-input">
+                </div>
+                <div class="setting-group">
+                    <label for="short-break">Short Break (minutes)</label>
+                    <input type="number" id="short-break" value="5" min="1" max="30" class="setting-input">
+                </div>
+                <div class="setting-group">
+                    <label for="long-break">Long Break (minutes)</label>
+                    <input type="number" id="long-break" value="15" min="1" max="60" class="setting-input">
+                </div>
+                <div class="setting-group">
+                    <label for="sessions-before-long">Sessions Before Long Break</label>
+                    <input type="number" id="sessions-before-long" value="4" min="1" max="10" class="setting-input">
+                </div>
+                <div class="setting-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="auto-start-breaks" class="setting-checkbox">
+                        Auto-start breaks
+                    </label>
+                </div>
+                <div class="setting-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="auto-start-work" class="setting-checkbox">
+                        Auto-start work sessions
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-settings" class="save-settings-btn spring-bounce">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Main App Script -->
+    <script src="firebase-app.js"></script>
+</body>
+</html>
